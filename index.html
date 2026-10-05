@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Mode</title>
+    <title>YouTube Không Quảng Cáo</title>
     <style>
         html, body {
             margin: 0;
@@ -14,7 +14,6 @@
             background-color: #0f0f0f;
             font-family: Arial, sans-serif;
         }
-        /* Thanh điều hướng nhanh phía trên phòng trường hợp server lỗi */
         .server-switcher {
             position: absolute;
             top: 0;
@@ -42,7 +41,6 @@
             cursor: pointer;
             outline: none;
         }
-        /* Khung hiển thị nội dung YouTube */
         .content-frame {
             position: absolute;
             top: 40px;
@@ -55,25 +53,23 @@
 </head>
 <body>
 
-    <!-- Thanh công cụ chuyển đổi Server nếu một bên bị chậm -->
     <div class="server-switcher">
-        <label>Chọn Server Dự Phòng (Nếu bị lag):</label>
+        <label>Chọn Server Dự Phòng:</label>
         <select id="serverSelect" onchange="changeServer()">
-            <option value="https://piped.video">Server 1 (Piped Video - Khuyên Dùng)</option>
-            <option value="https://piped.video">Server 2 (Piped Cloudflare)</option>
-            <option value="https://yewtu.be">Server 3 (Invidious Main)</option>
-            <option value="https://tux.digital">Server 4 (Invidious Alternative)</option>
+            <option value="https://yewtu.be">Server 1 (Invidious - Ổn định nhất)</option>
+            <option value="https://mha.fi">Server 2 (Piped - Tốc độ cao)</option>
+            <option value="https://nadeko.net">Server 3 (Invidious Cực mượt)</option>
+            <option value="https://piped.video">Server 4 (Piped Gốc)</option>
         </select>
     </div>
 
-    <!-- Nhúng trực tiếp toàn bộ trang xem sạch -->
-    <iframe id="youtubeFrame" class="content-frame" src="https://piped.video" allowfullscreen></iframe>
+    <!-- Tự động load Server 1 ổn định nhất trước -->
+    <iframe id="youtubeFrame" class="content-frame" src="https://yewtu.be" allowfullscreen></iframe>
 
     <script>
         function changeServer() {
             const select = document.getElementById('serverSelect');
             const frame = document.getElementById('youtubeFrame');
-            // Thay đổi luồng dữ liệu sang server được chọn
             frame.src = select.value;
         }
     </script>
