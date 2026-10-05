@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Sạch - Không Quảng Cáo</title>
+    <title>Trình Phát YouTube Không Quảng Cáo</title>
     <style>
         :root { --bg-color: #0f0f0f; --card-bg: #1f1f1f; --text-color: #f1f1f1; --accent-color: #ff0000; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; }
@@ -12,77 +12,159 @@
         .search-box { display: flex; flex-grow: 1; max-width: 600px; margin: 10px 20px; }
         .search-box input { flex-grow: 1; padding: 12px 15px; border: 1px solid #303030; background: #121212; color: white; border-radius: 20px 0 0 20px; font-size: 15px; outline: none; }
         .search-box button { padding: 12px 25px; border: none; background: #ff0000; color: white; border-radius: 0 20px 20px 0; cursor: pointer; font-weight: bold; }
-        .search-box button:hover { background: #cc0000; }
-        .main-layout { display: flex; flex-direction: column; padding: 20px 5%; max-width: 1000px; margin: auto; }
-        .player-section { width: 100%; display: none; margin-top: 10px; }
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
-        .instructions { background: var(--card-bg); padding: 25px; border-radius: 8px; text-align: left; line-height: 1.6; margin-top: 20px; border-left: 4px solid var(--accent-color); }
-        ol { padding-left: 20px; }
-        .note { color: #aaa; font-size: 14px; margin-top: 15px; }
+        .main-layout { display: flex; flex-direction: column; padding: 20px 5%; max-width: 1200px; margin: auto; }
+        
+        /* Trình phát video HTML5 gốc */
+        .player-section { width: 100%; display: none; margin-bottom: 30px; }
+        video { width: 100%; max-height: 560px; background: #000; border-radius: 12px; outline: none; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+        .video-title { margin-top: 15px; font-size: 20px; font-weight: 600; }
+        
+        .grid-title { font-size: 20px; margin-bottom: 15px; font-weight: bold; border-left: 4px solid var(--accent-color); padding-left: 10px; }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .video-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; }
+        .video-card:hover { transform: translateY(-4px); }
+        .video-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .video-info { padding: 12px; }
+        .v-title { font-size: 14px; font-weight: bold; margin: 0 0 6px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .v-author { font-size: 12px; color: #aaa; margin: 0; }
+        .status { text-align: center; padding: 30px; color: #aaa; font-size: 16px; }
     </style>
 </head>
 <body>
 
     <header>
-        <a class="logo" href="">📺 YT NO-ADS TỐI ƯU</a>
+        <a class="logo" onclick="loadHome()">📺 YT PREMIUM</a>
         <div class="search-box">
-            <input type="text" id="videoUrl" placeholder="Dán link video YouTube vào đây (Ví dụ: https://youtube.com...)">
-            <button onclick="loadPremiumVideo()">XEM NGAY</button>
+            <input type="text" id="searchInp" placeholder="Dán link YouTube hoặc nhập từ khóa tìm kiếm...">
+            <button onclick="handleSearch()">TÌM KIẾM</button>
         </div>
     </header>
 
     <div class="main-layout">
-        <!-- Khung phát Video Premium -->
+        <!-- Khu vực Trình phát Video HTML5 Sạch -->
         <section class="player-section" id="playerSection">
-            <div class="video-container" id="videoWrapper"></div>
+            <video id="nativePlayer" controls autoplay crossorigin="anonymous"></video>
+            <div class="video-title" id="currentTitle">Tiêu đề video</div>
         </section>
 
-        <!-- Hướng dẫn sử dụng nhanh -->
-        <section class="instructions" id="guideSection">
-            <h3>💡 Hướng dẫn xem Video không quảng cáo:</h3>
-            <ol>
-                <li>Mở ứng dụng YouTube hoặc trang web YouTube gốc để tìm video bạn muốn xem.</li>
-                <li>**Sao chép đường link (URL)** của video đó.</li>
-                <li>Dán đường link vào thanh tìm kiếm ở phía trên và bấm nút **"XEM NGAY"**.</li>
-            </ol>
-            <p class="note">* Hệ thống tự động bóc tách ID mã hóa để truyền luồng tải qua giao thức bảo mật cao cấp <b>youtube-nocookie</b>, loại bỏ hoàn toàn các đoạn mã chứa quảng cáo của Google.</p>
+        <!-- Danh sách video hiển thị -->
+        <section>
+            <div class="grid-title" id="sectionTitle">Trang Chủ YouTube</div>
+            <div id="statusLabel" class="status">Đang kết nối hệ thống dữ liệu sạch...</div>
+            <div class="video-grid" id="videoGrid"></div>
         </section>
     </div>
 
     <script>
-        // Hàm bóc tách ID của mọi loại link Youtube (link ngắn, link máy tính, link chia sẻ)
-        function extractYoutubeId(url) {
-            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-            const match = url.match(regExp);
-            if (match && match[2].length === 11) {
-                return match[2];
-            } else {
-                // Trường hợp người dùng nhập trực tiếp ID gồm 11 ký tự
-                return url.trim().length === 11 ? url.trim() : null;
+        // Cụm API Invidious thế hệ mới phân tách luồng dữ liệu video
+        const apiInstances = [
+            "https://flokinet.to",
+            "https://tux.digital",
+            "https://io.lol",
+            "https://melmac.space"
+        ];
+        let activeApi = apiInstances[0];
+
+        window.onload = function() {
+            loadHome();
+            document.getElementById('searchInp').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleSearch();
+            });
+        };
+
+        // Tự động kiểm tra và lấy API phản hồi nhanh nhất
+        async function requestAPI(endpoint) {
+            document.getElementById('statusLabel').style.display = 'block';
+            document.getElementById('statusLabel').innerText = 'Đang đồng bộ luồng video...';
+            
+            for (let base of apiInstances) {
+                try {
+                    const res = await fetch(`${base}/api/v1${endpoint}`, { signal: AbortSignal.timeout(4000) });
+                    if (res.ok) {
+                        activeApi = base;
+                        document.getElementById('statusLabel').style.display = 'none';
+                        return await res.json();
+                    }
+                } catch (e) { console.log(`Cổng ${base} bận, đang chuyển đổi...`); }
             }
+            document.getElementById('statusLabel').innerText = 'Hệ thống đang tải lại dữ liệu, vui lòng bấm TÌM KIẾM lại sau vài giây.';
+            return null;
         }
 
-        function loadPremiumVideo() {
-            const inputUrl = document.getElementById('videoUrl').value;
-            const videoId = extractYoutubeId(inputUrl);
+        // Tải danh sách video thịnh hành làm trang chủ
+        async function loadHome() {
+            document.getElementById('sectionTitle').innerText = "Video Thịnh Hành Hôm Nay";
+            const data = await requestAPI("/trending?region=VN");
+            if (data) renderVideos(data);
+        }
 
-            if (!videoId) {
-                alert('Đường link YouTube không hợp lệ! Vui lòng thử lại.');
+        // Nhận diện nhập link hoặc từ khóa tìm kiếm
+        function extractId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match.length === 11) ? match[2] : null;
+        }
+
+        async function handleSearch() {
+            const query = document.getElementById('searchInp').value.trim();
+            if (!query) return;
+
+            const directId = extractId(query);
+            if (directId) {
+                playNativeVideo(directId, "Video từ đường dẫn bạn gửi");
                 return;
             }
 
+            document.getElementById('sectionTitle').innerText = `Kết quả tìm kiếm cho: "${query}"`;
+            const data = await requestAPI(`/search?q=${encodeURIComponent(query)}&type=video`);
+            if (data) renderVideos(data);
+        }
+
+        function renderVideos(items) {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = '';
+            items.forEach(item => {
+                if (!item.videoId) return;
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.onclick = () => playNativeVideo(item.videoId, item.title);
+                card.innerHTML = `
+                    <img src="https://youtube.com{item.videoId}/mqdefault.jpg" alt="thumbnail">
+                    <div class="video-info">
+                        <p class="v-title">${item.title}</p>
+                        <p class="v-author">${item.author || 'YouTube Channel'}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Gọi trực tiếp file video gốc đưa vào trình phát HTML5 không quảng cáo
+        async function playNativeVideo(id, title) {
             const playerSection = document.getElementById('playerSection');
-            const wrapper = document.getElementById('videoWrapper');
-            
-            // Nhúng luồng phát sạch chính chủ không chứa Cookies quảng cáo
-            wrapper.innerHTML = `<iframe src="https://youtube-nocookie.com{videoId}?autoplay=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-            
-            // Hiển thị khung phát video
+            const player = document.getElementById('nativePlayer');
+            document.getElementById('currentTitle').innerText = title;
+
             playerSection.style.display = 'block';
-            
-            // Cuộn màn hình lên đầu để xem phim
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            try {
+                // Gọi API lấy file nguồn video trực tiếp
+                const res = await fetch(`${activeApi}/api/v1/videos/${id}`);
+                const videoData = await res.json();
+                
+                if (videoData && videoData.formatStreams && videoData.formatStreams.length > 0) {
+                    // Lựa chọn file video có độ phân giải cao có sẵn trong luồng
+                    const sortedStreams = videoData.formatStreams.reverse();
+                    player.src = sortedStreams[0].url;
+                    player.load();
+                    player.play();
+                } else {
+                    alert("Không thể giải mã luồng video này, vui lòng thử lại hoặc chọn video khác!");
+                }
+            } catch (err) {
+                alert("Lỗi kết nối máy chủ video. Vui lòng nhấn tìm kiếm lại để làm mới!");
+            }
         }
     </script>
 </body>
