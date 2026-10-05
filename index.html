@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Premium Dashboard</title>
+    <title>YouTube Premium - Giao Diện Sạch</title>
     <style>
         html, body {
             margin: 0;
@@ -14,7 +14,7 @@
             background-color: #0f0f0f;
             font-family: Arial, sans-serif;
         }
-        /* Thanh điều khiển tối giản trên cùng */
+        /* Thanh điều hướng */
         .control-bar {
             position: absolute;
             top: 0;
@@ -30,11 +30,6 @@
             z-index: 9999;
             box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         }
-        .logo-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
         .logo {
             font-size: 18px;
             font-weight: bold;
@@ -42,16 +37,6 @@
             text-decoration: none;
             cursor: pointer;
         }
-        .btn-home {
-            background: #333;
-            color: #fff;
-            border: 1px solid #444;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .btn-home:hover { background: #444; }
         .search-box {
             display: flex;
             width: 50%;
@@ -77,10 +62,7 @@
             font-weight: bold;
         }
         .search-box button:hover { background: #cc0000; }
-        .action-btns {
-            display: flex;
-            gap: 10px;
-        }
+        
         .download-btn {
             background: #00b0ff;
             color: white;
@@ -93,7 +75,7 @@
         }
         .download-btn:hover { background: #0091ea; }
 
-        /* Khung hiển thị nội dung chính */
+        /* Khung hiển thị nội dung video sạch */
         .content-frame {
             position: absolute;
             top: 56px;
@@ -107,68 +89,72 @@
 <body>
 
     <div class="control-bar">
-        <div class="logo-group">
-            <a class="logo" onclick="goYouTubeHome()">📺 YT DASHBOARD</a>
-            <button class="btn-home" onclick="goYouTubeHome()">Trang Chủ Gốc</button>
-        </div>
+        <a class="logo" onclick="goHome()">📺 YT PREMIUM</a>
         
         <div class="search-box">
-            <input type="text" id="inputUrl" placeholder="Dán link video đang xem vào đây để KÍCH HOẠT CHẶN QUẢNG CÁO...">
-            <button onclick="activatePremiumPlayer()">PHÁT SẠCH</button>
+            <input type="text" id="inputSearch" placeholder="Nhập tên bài hát, video hoặc dán link YouTube vào đây...">
+            <button onclick="searchOrPlay()">TÌM / PHÁT</button>
         </div>
 
-        <div class="action-btns">
-            <button class="download-btn" onclick="downloadVideo()">📥 TẢI VIDEO / MP3</button>
-        </div>
+        <button class="download-btn" onclick="downloadVideo()">📥 TẢI MP3 / VIDEO</button>
     </div>
 
-    <!-- Mở trang web nạp THẲNG TRANG CHỦ YOUTUBE.COM gốc -->
-    <iframe id="youtubeFrame" class="content-frame" src="https://youtube.com" allowfullscreen></iframe>
+    <!-- Tự động nạp thẳng trang chủ YouTube sạch qua máy chủ Invidious tốc độ cao -->
+    <iframe id="youtubeFrame" class="content-frame" src="https://nadeko.net" allowfullscreen></iframe>
 
     <script>
-        let currentActiveId = "";
-
-        // Hỗ trợ nhấn Enter nhanh
-        document.getElementById('inputUrl').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') activatePremiumPlayer();
+        // Hỗ trợ nhấn nút Enter để tìm kiếm nhanh
+        document.getElementById('inputSearch').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') searchOrPlay();
         });
 
-        // Quay về trang chủ youtube.com thông thường
-        function goYouTubeHome() {
-            document.getElementById('inputUrl').value = "";
-            currentActiveId = "";
-            document.getElementById('youtubeFrame').src = "https://youtube.com";
+        const defaultInstance = "https://nadeko.net";
+
+        function goHome() {
+            document.getElementById('inputSearch').value = "";
+            document.getElementById('youtubeFrame').src = defaultInstance + "/trending";
         }
 
-        // Trích xuất ID video từ link người dùng dán vào
         function extractId(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
-            if (match && match[2].length === 11) {
-                return match[2];
-            }
+            if (match && match.length === 11) return match[2];
             return url.trim().length === 11 ? url.trim() : null;
         }
 
-        // Chuyển sang luồng phát Player HTML5 cô lập - Chặn đứng hoàn toàn quảng cáo
-        function activatePremiumPlayer() {
-            const input = document.getElementById('inputUrl').value.trim();
-            if (!input) return alert('Vui lòng copy đường link video dán vào đây!');
+        // Tích hợp cả tính năng tìm kiếm từ khóa lẫn xử lý link thủ công
+        function searchOrPlay() {
+            const input = document.getElementById('inputSearch').value.trim();
+            if (!input) return alert('Vui lòng nhập từ khóa hoặc link video!');
 
             const id = extractId(input);
-            if (!id) return alert('Đường link video không hợp lệ, vui lòng kiểm tra lại!');
+            const frame = document.getElementById('youtubeFrame');
 
-            currentActiveId = id;
-            // Nạp luồng phát không cookie quảng cáo bảo mật cao nhất
-            document.getElementById('youtubeFrame').src = "https://youtube-nocookie.com" + id + "?autoplay=1&rel=0";
+            if (id) {
+                // Nếu người dùng dán link trực tiếp, ép hệ thống phát qua chế độ bảo mật không quảng cáo
+                frame.src = "https://youtube-nocookie.com" + id + "?autoplay=1&rel=0";
+            } else {
+                // Nếu người dùng gõ từ khóa thông thường, hệ thống tự động tìm kiếm trực tiếp trên trang chủ sạch
+                frame.src = defaultInstance + "/search?q=" + encodeURIComponent(input);
+            }
         }
 
-        // Chuyển hướng tải file media chất lượng cao
+        // Tự động phân tích video đang phát để lấy link tải xuống trực tiếp
         function downloadVideo() {
-            if (!currentActiveId) {
-                return alert('Vui lòng dán link video vào thanh công cụ và bấm "PHÁT SẠCH" trước khi tải xuống!');
+            const frameSrc = document.getElementById('youtubeFrame').src;
+            let videoId = "";
+
+            if (frameSrc.includes("watch?v=")) {
+                videoId = frameSrc.split("watch?v=")[1].split("&")[0];
+            } else if (frameSrc.includes("embed/")) {
+                videoId = frameSrc.split("embed/")[1].split("?")[0];
             }
-            const downloadUrl = "https://9xbuddy.xyz/process?url=https://youtube.com/watch?v=" + currentActiveId;
+
+            if (!videoId) {
+                return alert('Vui lòng chọn mở một video cụ thể trên màn hình trước khi bấm nút tải xuống!');
+            }
+
+            const downloadUrl = "https://9xbuddy.xyz" + videoId;
             window.open(downloadUrl, '_blank');
         }
     </script>
