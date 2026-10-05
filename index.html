@@ -49,13 +49,13 @@
             
             <!-- Thanh điều khiển chuyển đổi kênh giải mã trực tiếp -->
             <div class="control-panel">
-                <div>⚡ Đang phát ở chế độ không quảng cáo</div>
+                <div>⚡ Đang phát ở chế độ sạch, bảo mật</div>
                 <div>
                     <label for="engineSelect">Tuyến giải mã dự phòng: </label>
                     <select id="engineSelect" onchange="switchEngine()">
-                        <option value="piped">Tuyến 1 (Piped Engine - Tốc độ cao)</option>
-                        <option value="invidious">Tuyến 2 (Invidious Core - Ổn định)</option>
-                        <option value="nocookie">Tuyến 3 (YouTube Privacy Mode)</option>
+                        <option value="nocookie">Tuyến 1 (YouTube Privacy - Gốc mượt nhất)</option>
+                        <option value="piped">Tuyến 2 (Piped Proxy - Không quảng cáo)</option>
+                        <option value="invidious">Tuyến 3 (Invidious Core - Xem ẩn danh)</option>
                     </select>
                 </div>
             </div>
@@ -80,17 +80,17 @@
     <script>
         let currentVideoId = "";
 
-        // Tự động bắt sự kiện nút Enter khi người dùng nhập link xong
+        // Bắt sự kiện nút Enter khi nhập link
         document.getElementById('inputSource').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') processVideo();
         });
 
-        // Hàm bóc tách ID tự động từ mọi định dạng link YouTube
+        // Hàm bóc tách ID tự động chuẩn xác từ mọi loại link Youtube
         function parseYoutubeId(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             if (match && match[2].length === 11) {
-                return match[2];
+                return match[2]; // Lấy chính xác chuỗi ID 11 ký tự
             }
             return url.trim().length === 11 ? url.trim() : null;
         }
@@ -115,11 +115,12 @@
             document.getElementById('welcomePanel').style.display = 'none';
             document.getElementById('playerWrapper').style.display = 'block';
             
-            // Tiến hành tải video dựa trên lựa chọn giải mã
+            // Mặc định ưu tiên chọn Tuyến 1 mượt nhất
+            document.getElementById('engineSelect').value = "nocookie";
             switchEngine();
         }
 
-        // Hàm chuyển đổi kênh phát trực tiếp qua Iframe không dính CORS
+        // Hàm đổi luồng phát tĩnh
         function switchEngine() {
             if (!currentVideoId) return;
             
@@ -127,21 +128,20 @@
             const videoBox = document.getElementById('videoBox');
             let iframeUrl = "";
 
-            if (engine === "piped") {
-                // Nhúng thông qua giao diện cổng Piped sạch toàn cầu
+            if (engine === "nocookie") {
+                // Tuyến chính chủ bảo mật không quảng cáo
+                iframeUrl = `https://youtube-nocookie.com{currentVideoId}?autoplay=1&rel=0`;
+            } else if (engine === "piped") {
+                // Tuyến proxy Piped toàn cầu
                 iframeUrl = `https://piped.video{currentVideoId}?autoplay=1`;
             } else if (engine === "invidious") {
-                // Nhúng thông qua cổng Invidious Core bảo mật
+                // Tuyến proxy Invidious Core
                 iframeUrl = `https://yewtu.be{currentVideoId}`;
-            } else if (engine === "nocookie") {
-                // Nhúng trực tiếp từ cổng phân phối chính chủ riêng tư không chứa tệp tin quảng cáo
-                iframeUrl = `https://youtube-nocookie.com{currentVideoId}?autoplay=1&rel=0`;
             }
 
-            // Ghi đè mã Iframe vào giao diện để ép trình duyệt làm mới luồng video sạch hoàn toàn
+            // Nạp mã Iframe chuẩn xác
             videoBox.innerHTML = `<iframe src="${iframeUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
             
-            // Cuộn trang nhẹ nhàng lên đầu trang để tập trung xem
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
