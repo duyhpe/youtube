@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Premium - Trang Chủ</title>
+    <title>YouTube Premium Dashboard</title>
     <style>
         html, body {
             margin: 0;
@@ -14,21 +14,26 @@
             background-color: #0f0f0f;
             font-family: Arial, sans-serif;
         }
-        /* Thanh công cụ tìm kiếm và điều hướng */
-        .nav-bar {
+        /* Thanh điều khiển tối giản trên cùng */
+        .control-bar {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 56px;
-            background: #212121;
+            background: #1a1a1a;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
             box-sizing: border-box;
             z-index: 9999;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        }
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .logo {
             font-size: 18px;
@@ -37,6 +42,16 @@
             text-decoration: none;
             cursor: pointer;
         }
+        .btn-home {
+            background: #333;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-home:hover { background: #444; }
         .search-box {
             display: flex;
             width: 50%;
@@ -44,38 +59,40 @@
         }
         .search-box input {
             flex-grow: 1;
-            padding: 8px 12px;
+            padding: 8px 15px;
             border: 1px solid #303030;
-            background: #121212;
+            background: #0a0a0a;
             color: white;
-            border-radius: 2px 0 0 2px;
+            border-radius: 20px 0 0 20px;
             font-size: 14px;
             outline: none;
         }
         .search-box button {
             padding: 8px 20px;
             border: none;
-            background: #303030;
+            background: #ff0000;
             color: white;
-            border-radius: 0 2px 2px 0;
+            border-radius: 0 20px 20px 0;
             cursor: pointer;
+            font-weight: bold;
         }
-        .search-box button:hover {
-            background: #404040;
+        .search-box button:hover { background: #cc0000; }
+        .action-btns {
+            display: flex;
+            gap: 10px;
         }
         .download-btn {
             background: #00b0ff;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border-radius: 20px;
             font-weight: bold;
             cursor: pointer;
             font-size: 13px;
         }
-        .download-btn:hover {
-            background: #0091ea;
-        }
+        .download-btn:hover { background: #0091ea; }
+
         /* Khung hiển thị nội dung chính */
         .content-frame {
             position: absolute;
@@ -89,67 +106,69 @@
 </head>
 <body>
 
-    <div class="nav-bar">
-        <a class="logo" onclick="goHome()">📺 YT HOMEPAGE</a>
+    <div class="control-bar">
+        <div class="logo-group">
+            <a class="logo" onclick="goYouTubeHome()">📺 YT DASHBOARD</a>
+            <button class="btn-home" onclick="goYouTubeHome()">Trang Chủ Gốc</button>
+        </div>
         
         <div class="search-box">
-            <input type="text" id="inputUrl" placeholder="Dán link video YouTube vào đây để xem không quảng cáo...">
-            <button onclick="playVideo()">XEM NGAY</button>
+            <input type="text" id="inputUrl" placeholder="Dán link video đang xem vào đây để KÍCH HOẠT CHẶN QUẢNG CÁO...">
+            <button onclick="activatePremiumPlayer()">PHÁT SẠCH</button>
         </div>
 
-        <button class="download-btn" onclick="downloadVideo()">📥 TẢI VIDEO</button>
+        <div class="action-btns">
+            <button class="download-btn" onclick="downloadVideo()">📥 TẢI VIDEO / MP3</button>
+        </div>
     </div>
 
-    <!-- Mở trang web sẽ nạp thẳng giao diện trang chủ không quảng cáo -->
-    <iframe id="youtubeFrame" class="content-frame" src="https://yewtu.be" allowfullscreen></iframe>
+    <!-- Mở trang web nạp THẲNG TRANG CHỦ YOUTUBE.COM gốc -->
+    <iframe id="youtubeFrame" class="content-frame" src="https://youtube.com" allowfullscreen></iframe>
 
     <script>
-        // Tự động nhận diện khi nhấn phím Enter
+        let currentActiveId = "";
+
+        // Hỗ trợ nhấn Enter nhanh
         document.getElementById('inputUrl').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') playVideo();
+            if (e.key === 'Enter') activatePremiumPlayer();
         });
 
-        // Hàm đưa trang quay trở lại trang chủ mặc định
-        function goHome() {
+        // Quay về trang chủ youtube.com thông thường
+        function goYouTubeHome() {
             document.getElementById('inputUrl').value = "";
-            document.getElementById('youtubeFrame').src = "https://yewtu.be";
+            currentActiveId = "";
+            document.getElementById('youtubeFrame').src = "https://youtube.com";
         }
 
-        // Bóc tách ID để phát video đơn lẻ khi người dùng dán link
-        function parseId(url) {
+        // Trích xuất ID video từ link người dùng dán vào
+        function extractId(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
-            if (match && match.length === 11) {
-                return match;
+            if (match && match[2].length === 11) {
+                return match[2];
             }
             return url.trim().length === 11 ? url.trim() : null;
         }
 
-        function playVideo() {
+        // Chuyển sang luồng phát Player HTML5 cô lập - Chặn đứng hoàn toàn quảng cáo
+        function activatePremiumPlayer() {
             const input = document.getElementById('inputUrl').value.trim();
-            if (!input) return alert('Vui lòng nhập link video!');
+            if (!input) return alert('Vui lòng copy đường link video dán vào đây!');
 
-            const id = parseId(input);
-            if (!id) return alert('Đường link không hợp lệ!');
+            const id = extractId(input);
+            if (!id) return alert('Đường link video không hợp lệ, vui lòng kiểm tra lại!');
 
-            // Chuyển sang luồng phát video không chứa dữ liệu quảng cáo
+            currentActiveId = id;
+            // Nạp luồng phát không cookie quảng cáo bảo mật cao nhất
             document.getElementById('youtubeFrame').src = "https://youtube-nocookie.com" + id + "?autoplay=1&rel=0";
         }
 
-        // Hàm xử lý tải file media
+        // Chuyển hướng tải file media chất lượng cao
         function downloadVideo() {
-            const frameSrc = document.getElementById('youtubeFrame').src;
-            let videoId = "";
-
-            if (frameSrc.includes("embed/")) {
-                videoId = frameSrc.split("embed/")[1].split("?")[0];
+            if (!currentActiveId) {
+                return alert('Vui lòng dán link video vào thanh công cụ và bấm "PHÁT SẠCH" trước khi tải xuống!');
             }
-
-            if (!videoId) {
-                return alert('Vui lòng dán link video vào thanh công cụ và bấm "XEM NGAY" trước khi bấm tải!');
-            }
-
-            const downloadUrl = "https://9xbuddy.xyz" + videoId;
+            const downloadUrl = "https://9xbuddy.xyz/process?url=https://youtube.com/watch?v=" + currentActiveId;
             window.open(downloadUrl, '_blank');
         }
     </script>
