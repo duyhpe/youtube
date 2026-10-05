@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Xem YouTube Sạch - Không Quảng Cáo</title>
+    <title>Hệ Thống Xem & Tải Video YouTube Không Quảng Cáo</title>
     <style>
-        :root { --bg-color: #0a0a0a; --card-bg: #161616; --text-color: #f5f5f5; --accent-color: #ff0000; }
+        :root { --bg-color: #0a0a0a; --card-bg: #161616; --text-color: #f5f5f5; --accent-color: #ff0000; --download-btn: #00b0ff; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; }
         header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 15px 5%; background-color: #1a1a1a; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.6); }
-        .logo { font-size: 22px; font-weight: bold; color: var(--accent-color); cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .logo { font-size: 22px; font-weight: bold; color: var(--accent-color); cursor: pointer; text-decoration: none; }
         .search-box { display: flex; flex-grow: 1; max-width: 650px; margin: 10px 20px; }
         .search-box input { flex-grow: 1; padding: 12px 18px; border: 1px solid #333; background: #111; color: white; border-radius: 24px 0 0 24px; font-size: 15px; outline: none; }
         .search-box button { padding: 12px 28px; border: none; background: var(--accent-color); color: white; border-radius: 0 24px 24px 0; cursor: pointer; font-weight: bold; font-size: 14px; }
@@ -19,108 +19,90 @@
         .video-box { position: relative; padding-bottom: 56.25%; height: 0; background: #000; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.7); border: 1px solid #222; }
         .video-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
         
-        .control-panel { background: var(--card-bg); padding: 15px 25px; border-radius: 12px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border: 1px solid #252525; }
+        /* Bảng điều khiển tích hợp tải xuống */
+        .control-panel { background: var(--card-bg); padding: 20px 25px; border-radius: 12px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border: 1px solid #252525; }
         .control-panel select { background: #2a2a2a; color: white; border: 1px solid #444; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; outline: none; }
-        
-        .welcome-panel { background: var(--card-bg); border-radius: 16px; padding: 40px 30px; text-align: left; border: 1px solid #222; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-        .welcome-panel h2 { margin-top: 0; color: var(--accent-color); font-size: 24px; }
+        .btn-download { background: var(--download-btn); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; transition: 0.2s; }
+        .btn-download:hover { background: #0091ea; box-shadow: 0 0 10px rgba(0, 176, 255, 0.5); }
+
+        .welcome-panel { background: var(--card-bg); border-radius: 16px; padding: 40px 30px; text-align: left; border: 1px solid #222; margin-top: 20px; }
+        .welcome-panel h2 { margin-top: 0; color: var(--accent-color); }
         .welcome-panel ol { padding-left: 20px; line-height: 1.8; color: #ccc; }
-        .welcome-panel li strong { color: #fff; }
-        
-        .tip-box { background: rgba(255,0,0,0.05); border-left: 4px solid var(--accent-color); padding: 15px; border-radius: 4px; margin-top: 20px; font-size: 14px; color: #aaa; line-height: 1.5; }
     </style>
 </head>
 <body>
 
     <header>
-        <a class="logo" href="">📺 YT PREMIUM SẠCH</a>
+        <a class="logo" href="">📺 YT PREMIUM & DOWNLOAD</a>
         <div class="search-box">
             <input type="text" id="inputSource" placeholder="Dán link video YouTube hoặc ID video vào đây...">
-            <button onclick="processVideo()">PHÁT VIDEO</button>
+            <button onclick="processVideo()">XEM & TẢI</button>
         </div>
     </header>
 
     <div class="main-container">
-        <!-- Khung trình phát video thông minh không chặn -->
+        <!-- Khung phát và tải video -->
         <div class="player-wrapper" id="playerWrapper">
-            <div class="video-box" id="videoBox">
-                <!-- Iframe luồng phát sẽ được nạp tại đây -->
-            </div>
+            <div class="video-box" id="videoBox"></div>
             
-            <!-- Thanh điều khiển chuyển đổi kênh giải mã trực tiếp -->
             <div class="control-panel">
-                <div>⚡ Đang phát ở chế độ sạch, bảo mật</div>
                 <div>
-                    <label for="engineSelect">Tuyến giải mã dự phòng: </label>
+                    <label for="engineSelect">Chuyển luồng phát sạch: </label>
                     <select id="engineSelect" onchange="switchEngine()">
-                        <option value="nocookie">Tuyến 1 (YouTube Privacy - Gốc mượt nhất)</option>
-                        <option value="piped">Tuyến 2 (Piped Proxy - Không quảng cáo)</option>
-                        <option value="invidious">Tuyến 3 (Invidious Core - Xem ẩn danh)</option>
+                        <option value="nocookie">Tuyến 1 (YouTube Privacy - Ổn định tốt nhất)</option>
+                        <option value="piped">Tuyến 2 (Piped Core - Chặn quảng cáo gốc)</option>
+                        <option value="invidious">Tuyến 3 (Invidious Mirror - Xem ẩn danh)</option>
                     </select>
                 </div>
+                <!-- Nút tải file mp3, mp4 chất lượng cao -->
+                <button class="btn-download" onclick="downloadMedia()">📥 TẢI VIDEO / MP3 VỀ MÁY</button>
             </div>
         </div>
 
-        <!-- Bảng hướng dẫn tối giản định hướng người dùng -->
         <div class="welcome-panel" id="welcomePanel">
-            <h2>Hệ thống xem video bảo mật & Không quảng cáo</h2>
-            <p>Trang web hoạt động dựa trên cơ chế nạp luồng phát tĩnh, loại bỏ 100% các đoạn mã script quảng cáo, theo dõi và cookie từ Google.</p>
+            <h2>Hệ thống xem phim trực tuyến & Tách luồng tải file</h2>
+            <p>Trang web hỗ trợ vượt tường lửa cookie quảng cáo, hỗ trợ tải trực tiếp dữ liệu đa phương tiện từ YouTube.</p>
             <ol>
-                <li>Truy cập vào ứng dụng hoặc trang web <strong>YouTube</strong> thông thường.</li>
-                <li>Tìm kiếm từ khóa mong muốn (ví dụ: <em>"nhạc trẻ"</em>, <em>"phim hài"</em>) và chọn video.</li>
-                <li><strong>Sao chép đường link</strong> của video đó, dán vào thanh tìm kiếm ở trên rồi nhấn <strong>PHÁT VIDEO</strong>.</li>
+                <li>Truy cập vào <strong>YouTube gốc</strong> và chọn video cần kiểm tra.</li>
+                <li><strong>Sao chép đường dẫn (URL)</strong> trên thanh địa chỉ.</li>
+                <li>Dán vào thanh tìm kiếm phía trên, bấm <strong>XEM & TẢI</strong> để thực thi.</li>
             </ol>
-            
-            <div class="tip-box">
-                📌 <strong>Mẹo nhỏ:</strong> Bạn cũng có thể dán trực tiếp cụm mã ID gồm 11 ký tự của video (Ví dụ: nếu link là <code>watch?v=dQw4w9WgXcQ</code> thì nhập <code>dQw4w9WgXcQ</code>) để hệ thống nhận diện và xử lý ngay lập tức.
-            </div>
         </div>
     </div>
 
     <script>
         let currentVideoId = "";
 
-        // Bắt sự kiện nút Enter khi nhập link
         document.getElementById('inputSource').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') processVideo();
         });
 
-        // Hàm bóc tách ID tự động chuẩn xác từ mọi loại link Youtube
+        // Hàm bóc tách ID chuỗi chuẩn, loại bỏ các tham số thừa
         function parseYoutubeId(url) {
             const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             const match = url.match(regExp);
             if (match && match[2].length === 11) {
-                return match[2]; // Lấy chính xác chuỗi ID 11 ký tự
+                return match[2];
             }
             return url.trim().length === 11 ? url.trim() : null;
         }
 
-        // Xử lý nạp trình phát phim
         function processVideo() {
             const input = document.getElementById('inputSource').value.trim();
-            if (!input) {
-                alert('Vui lòng nhập link video hoặc ID video YouTube!');
-                return;
-            }
+            if (!input) return alert('Vui lòng nhập link video!');
 
             const id = parseYoutubeId(input);
-            if (!id) {
-                alert('Đường link YouTube không hợp lệ, vui lòng kiểm tra lại!');
-                return;
-            }
+            if (!id) return alert('Đường link không hợp lệ, vui lòng thử lại!');
 
             currentVideoId = id;
             
-            // Ẩn giao diện chào mừng, hiển thị khung phát
             document.getElementById('welcomePanel').style.display = 'none';
             document.getElementById('playerWrapper').style.display = 'block';
             
-            // Mặc định ưu tiên chọn Tuyến 1 mượt nhất
             document.getElementById('engineSelect').value = "nocookie";
             switchEngine();
         }
 
-        // Hàm đổi luồng phát tĩnh
         function switchEngine() {
             if (!currentVideoId) return;
             
@@ -129,20 +111,23 @@
             let iframeUrl = "";
 
             if (engine === "nocookie") {
-                // Tuyến chính chủ bảo mật không quảng cáo
-                iframeUrl = `https://youtube-nocookie.com{currentVideoId}?autoplay=1&rel=0`;
+                iframeUrl = "https://youtube-nocookie.com" + currentVideoId + "?autoplay=1&rel=0";
             } else if (engine === "piped") {
-                // Tuyến proxy Piped toàn cầu
-                iframeUrl = `https://piped.video{currentVideoId}?autoplay=1`;
+                iframeUrl = "https://piped.video" + currentVideoId;
             } else if (engine === "invidious") {
-                // Tuyến proxy Invidious Core
-                iframeUrl = `https://yewtu.be{currentVideoId}`;
+                iframeUrl = "https://yewtu.be" + currentVideoId;
             }
 
-            // Nạp mã Iframe chuẩn xác
-            videoBox.innerHTML = `<iframe src="${iframeUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Thực hiện gán chuỗi nối biến tường minh để sửa triệt để lỗi string literal
+            videoBox.innerHTML = '<iframe src="' + iframeUrl + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        }
+
+        // Cổng chuyển tiếp tải dữ liệu media trực tiếp 
+        function downloadMedia() {
+            if (!currentVideoId) return alert('Chưa chọn video nào để tải!');
+            // Chuyển hướng sang API hạ tầng lưu trữ trực tiếp của bên thứ 3
+            const downloadUrl = "https://9xbuddy.xyz" + currentVideoId;
+            window.open(downloadUrl, '_blank');
         }
     </script>
 </body>
