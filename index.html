@@ -3,74 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Không Quảng Cáo</title>
+    <title>YouTube Sạch - Không Quảng Cáo</title>
     <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0f0f0f;
-            font-family: Arial, sans-serif;
-        }
-        .server-switcher {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            background: #1f1f1f;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            z-index: 9999;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
-        .server-switcher label {
-            color: #aaa;
-            font-size: 13px;
-        }
-        .server-switcher select {
-            background: #333;
-            color: white;
-            border: 1px solid #555;
-            padding: 3px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            outline: none;
-        }
-        .content-frame {
-            position: absolute;
-            top: 40px;
-            left: 0;
-            width: 100%;
-            height: calc(100% - 40px);
-            border: none;
-        }
+        :root { --bg-color: #0f0f0f; --card-bg: #1f1f1f; --text-color: #f1f1f1; --accent-color: #ff0000; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; }
+        header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 15px 5%; background-color: #212121; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .logo { font-size: 22px; font-weight: bold; color: var(--accent-color); cursor: pointer; text-decoration: none; }
+        .search-box { display: flex; flex-grow: 1; max-width: 600px; margin: 10px 20px; }
+        .search-box input { flex-grow: 1; padding: 12px 15px; border: 1px solid #303030; background: #121212; color: white; border-radius: 20px 0 0 20px; font-size: 15px; outline: none; }
+        .search-box button { padding: 12px 25px; border: none; background: #ff0000; color: white; border-radius: 0 20px 20px 0; cursor: pointer; font-weight: bold; }
+        .search-box button:hover { background: #cc0000; }
+        .main-layout { display: flex; flex-direction: column; padding: 20px 5%; max-width: 1000px; margin: auto; }
+        .player-section { width: 100%; display: none; margin-top: 10px; }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        .instructions { background: var(--card-bg); padding: 25px; border-radius: 8px; text-align: left; line-height: 1.6; margin-top: 20px; border-left: 4px solid var(--accent-color); }
+        ol { padding-left: 20px; }
+        .note { color: #aaa; font-size: 14px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="server-switcher">
-        <label>Chọn Server Dự Phòng:</label>
-        <select id="serverSelect" onchange="changeServer()">
-            <option value="https://yewtu.be">Server 1 (Invidious - Ổn định nhất)</option>
-            <option value="https://mha.fi">Server 2 (Piped - Tốc độ cao)</option>
-            <option value="https://nadeko.net">Server 3 (Invidious Cực mượt)</option>
-            <option value="https://piped.video">Server 4 (Piped Gốc)</option>
-        </select>
+    <header>
+        <a class="logo" href="">📺 YT NO-ADS TỐI ƯU</a>
+        <div class="search-box">
+            <input type="text" id="videoUrl" placeholder="Dán link video YouTube vào đây (Ví dụ: https://youtube.com...)">
+            <button onclick="loadPremiumVideo()">XEM NGAY</button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Khung phát Video Premium -->
+        <section class="player-section" id="playerSection">
+            <div class="video-container" id="videoWrapper"></div>
+        </section>
+
+        <!-- Hướng dẫn sử dụng nhanh -->
+        <section class="instructions" id="guideSection">
+            <h3>💡 Hướng dẫn xem Video không quảng cáo:</h3>
+            <ol>
+                <li>Mở ứng dụng YouTube hoặc trang web YouTube gốc để tìm video bạn muốn xem.</li>
+                <li>**Sao chép đường link (URL)** của video đó.</li>
+                <li>Dán đường link vào thanh tìm kiếm ở phía trên và bấm nút **"XEM NGAY"**.</li>
+            </ol>
+            <p class="note">* Hệ thống tự động bóc tách ID mã hóa để truyền luồng tải qua giao thức bảo mật cao cấp <b>youtube-nocookie</b>, loại bỏ hoàn toàn các đoạn mã chứa quảng cáo của Google.</p>
+        </section>
     </div>
 
-    <!-- Tự động load Server 1 ổn định nhất trước -->
-    <iframe id="youtubeFrame" class="content-frame" src="https://yewtu.be" allowfullscreen></iframe>
-
     <script>
-        function changeServer() {
-            const select = document.getElementById('serverSelect');
-            const frame = document.getElementById('youtubeFrame');
-            frame.src = select.value;
+        // Hàm bóc tách ID của mọi loại link Youtube (link ngắn, link máy tính, link chia sẻ)
+        function extractYoutubeId(url) {
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            if (match && match[2].length === 11) {
+                return match[2];
+            } else {
+                // Trường hợp người dùng nhập trực tiếp ID gồm 11 ký tự
+                return url.trim().length === 11 ? url.trim() : null;
+            }
+        }
+
+        function loadPremiumVideo() {
+            const inputUrl = document.getElementById('videoUrl').value;
+            const videoId = extractYoutubeId(inputUrl);
+
+            if (!videoId) {
+                alert('Đường link YouTube không hợp lệ! Vui lòng thử lại.');
+                return;
+            }
+
+            const playerSection = document.getElementById('playerSection');
+            const wrapper = document.getElementById('videoWrapper');
+            
+            // Nhúng luồng phát sạch chính chủ không chứa Cookies quảng cáo
+            wrapper.innerHTML = `<iframe src="https://youtube-nocookie.com{videoId}?autoplay=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            
+            // Hiển thị khung phát video
+            playerSection.style.display = 'block';
+            
+            // Cuộn màn hình lên đầu để xem phim
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
